@@ -46,11 +46,23 @@ export default function SearchBar() {
                   setScope(opt);
                   setMenuVisible(false);
                 }}
-                style={s.menuItem}
                 hitSlop={6}
                 accessibilityRole="button"
+                style={({ pressed, hovered }) => [
+                  s.menuItem,
+                  (pressed || hovered) && { backgroundColor: colors.primary },
+                ]}
               >
-                <Text style={s.menuItemText}>{opt}</Text>
+                {({ pressed }) => (
+                  <Text
+                    style={[
+                      s.menuItemText,
+                      (pressed) && { color: colors.white },
+                    ]}
+                  >
+                    {opt}
+                  </Text>
+                )}
               </Pressable>
             ))}
           </View>
@@ -89,7 +101,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    overflow: "hidden",
+    overflow: "visible",
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     position: "relative",
@@ -128,9 +140,11 @@ const s = StyleSheet.create({
   menuItem: {
     paddingVertical: 10,
     paddingHorizontal: 12,
+    borderRadius: 6,
   },
   menuItemText: {
     color: colors.text,
+    fontWeight: "500",
   },
   input: {
     flex: 1,
@@ -142,6 +156,10 @@ const s = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
+    borderTopRightRadius: radius.lg,     
+    borderBottomRightRadius: radius.lg,  
   },
 });
+
+
 

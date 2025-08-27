@@ -1,28 +1,39 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
-import {
-  Image,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-
-type Props = {
+import React, { useEffect, useMemo, useState } from "react";
+import {Image, Platform, Pressable, SafeAreaView, StatusBar, StyleSheet, Text, View} from "react-native";
+import { useActiveChannel } from "../core/channel";
+import { storage, type UserFlyout as UserFlyoutType } from "../core/storage";
+import UserFlyout from "./UserFlyout";
+    
+type Props = {  
   title?: string;
   showBack?: boolean;
 };
 
 export default function Header({ title, showBack }: Props) {
   const nav = useNavigation<any>();
+  const { channelId } = useActiveChannel(); 
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const [user, setUser] = useState<UserFlyoutType | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const u = await storage.getUserFlyout();
+      setUser(u);
+    })();
+  }, []);
 
   const openMenu = () => nav.navigate("SideMenu");
   const onBell = () => nav.navigate("NotFound", { q: "notifications" });
-  const onAvatar = () => nav.navigate("SwitchChannel");
+
+  const initial = useMemo(() => {
+    const name = user?.profile_name?.trim();
+    if (name && name.length > 0) return name[0]!.toUpperCase();
+    const email = user?.email?.trim();
+    if (email && email.length > 0) return email[0]!.toUpperCase();
+    return "U";
+  }, [user]);
 
   return (
     <SafeAreaView style={s.safe}>
@@ -43,29 +54,34 @@ export default function Header({ title, showBack }: Props) {
             </View>
           )}
 
-          {/* burger */}
           <Pressable onPress={openMenu} hitSlop={12} style={[s.iconBtn, { marginLeft: spacing.lg }]}>
             <Ionicons name="menu" size={24} color="#fff" />
           </Pressable>
         </View>
 
-        {/* optional centered title */}
         {title ? <Text style={s.title}>{title}</Text> : <View style={{ flex: 1 }} />}
 
         <View style={s.right}>
-          <Pressable onPress={onBell} hitSlop={12} style={s.iconBtn}>
+
+          <Pressable onPress={onBell} hitSlop={12} style={[s.iconBtn, { marginLeft: spacing.lg }]}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
           </Pressable>
 
-          <Pressable onPress={onAvatar} hitSlop={12} style={s.avatarWrap}>
+          <Pressable onPress={() => setFlyoutOpen(true)} hitSlop={12} style={s.avatarWrap}>
             <View style={s.avatarBorder}>
               <View style={s.avatar}>
-                <Text style={s.avatarText}>M</Text>
+                <Text style={s.avatarText}>{initial}</Text>
               </View>
             </View>
           </Pressable>
         </View>
       </View>
+
+      <UserFlyout
+        open={flyoutOpen}
+        onClose={() => setFlyoutOpen(false)}
+        user={{ name: user?.profile_name, email: user?.email }}
+      />
     </SafeAreaView>
   );
 }
@@ -83,7 +99,6 @@ const radius = {
 };
 
 const s = StyleSheet.create({
-  // Safe area container: keeps the same header bg and fixes Android status bar overlap
   safe: {
     backgroundColor: "#0e0f16",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
@@ -109,6 +124,20 @@ const s = StyleSheet.create({
   },
   right: { marginLeft: "auto", flexDirection: "row", alignItems: "center" },
   iconBtn: { padding: 6, borderRadius: radius.sm },
+
+  channelPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#111a22",
+    borderWidth: 1,
+    borderColor: "#284b63",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  channelText: { color: "#9fd3ff", fontSize: 12, fontWeight: "700" },
+
   avatarWrap: { marginLeft: spacing.lg },
   avatarBorder: {
     padding: 2,
